@@ -21,22 +21,20 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com",
 
 };
-
-app.get("/", (req, res) => {
-  res.send("Hello!");
-});
-
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
+// edits our long url and gives it a new shorturl?
+const edit = (request, response) => {
+  let longUrl = request.body.longURL; // grabs the same long URL rathar then the new one
+  console.log(longUrl);
+  const currentUrl = request.params.shortURL; // tells us our current url is the short key in the object
+  console.log(currentUrl);
+  urlDatabase[currentUrl] = request.body.longURL; // update the object to be our key and a new url?
+  response.redirect(`/urls/${currentUrl}`);
+};
+app.post(`/urls/:shortURL`, edit);
 
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL];
-  console.log(urlDatabase);
+  //console.log(urlDatabase);
   // without the https:// it assumes your path is a local host path so you need to tell it to use http.
   res.redirect('http://' + longURL);
 });
@@ -53,9 +51,11 @@ app.get("/urls", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   // req.params is all the parameters in the url "address search bar thing"
-  let templateVars = { shortURL: req.params.shortURL, longURL: req.params.longURL };
+  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render("urls_show", templateVars);
 });
+
+
 
 // delete url
 app.post('/urls/:shortURL/delete', (request, response) => {
