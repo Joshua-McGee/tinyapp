@@ -9,9 +9,9 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 const chars = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz"]; // every character the url can have
 
-function generateRandomString() {
+const generateRandomString = () => {
   return [...Array(6)].map(i=>chars[Math.random()*chars.length|0]).join``; // returns 6 character array based on the varable chars.
-}
+};
 
 //console.log(generateRandomString());
 //shortURL = generateRandomString();
