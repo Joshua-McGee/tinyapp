@@ -14,10 +14,12 @@ function generateRandomString() {
 }
 
 //console.log(generateRandomString());
+//shortURL = generateRandomString();
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "9sm5xK": "http://www.google.com",
+
 };
 
 app.get("/", (req, res) => {
@@ -32,6 +34,13 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
+app.get("/u/:shortURL", (req, res) => {
+  const longURL = urlDatabase[req.params.shortURL];
+  console.log(urlDatabase);
+  // without the https:// it assumes your path is a local host path so you need to tell it to use http.
+  res.redirect('http://' + longURL);
+});
+
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
@@ -43,16 +52,19 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
+  // req.params is all the parameters in the url "address search bar thing"
   let templateVars = { shortURL: req.params.shortURL, longURL: req.params.longURL };
   res.render("urls_show", templateVars);
 });
 
 app.post("/urls", (req, res) => {
   console.log(req.body);  // Log the POST request body to the console
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  // add to the object our short and long url
+  let newShortUrl = generateRandomString();
+  let longUrl = req.body.longURL;
+  urlDatabase[newShortUrl] = longUrl; // key + value saves to our url database
+  res.redirect(`/urls/${newShortUrl}`);
 });
-
-
 
 
 app.listen(PORT, () => {
