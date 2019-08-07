@@ -24,6 +24,21 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com",
 
 };
+// clears our cookie (name) when pressed and redirects to our homepage
+app.post('/logout', (request, response) => {
+  let name = 'username';
+  let value = request.body.username;
+  response.clearCookie(name, value);
+  response.redirect('/urls');
+});
+// changes our homepage to include a username that typed in after hitting login button then redirect to homepage
+app.post('/login', (request, response) => {
+  let name = 'username';
+  let value = request.body.username;
+  response.cookie(name, value);
+  response.redirect('/urls');
+});
+
 // edits our long url and gives it a new shorturl?
 const edit = (request, response) => {
   let longUrl = request.body.longURL; // grabs the same long URL rathar then the new one
@@ -43,21 +58,24 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  let templateVars = {
+    username: req.cookies["username"],
+    // ... any other vars
+  };
+  res.render("urls_new", templateVars);
 });
-
+// homepage static
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase };
+  let templateVars = { urls: urlDatabase, username: req.cookies["username"] };
   res.render("urls_index", templateVars); // it will look in our views folder for urls_index, then run our variable above
   //res.send('/urls page');
 });
 
 app.get("/urls/:shortURL", (req, res) => {
   // req.params is all the parameters in the url "address search bar thing"
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
+  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], username: req.cookies["username"] };
   res.render("urls_show", templateVars);
 });
-
 
 
 // delete url
@@ -66,6 +84,7 @@ app.post('/urls/:shortURL/delete', (request, response) => {
   response.redirect('/urls');
 });
 
+// homepage updates are processed here
 app.post("/urls", (req, res) => {
   console.log(req.body);  // Log the POST request body to the console
   // add to the object our short and long url
