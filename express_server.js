@@ -15,36 +15,113 @@ const chars = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxy
 const generateRandomString = () => {
   return [...Array(6)].map(i=>chars[Math.random()*chars.length|0]).join``; // returns 6 character array based on the varable chars.
 };
+// not supposed to use this
+// function that returns true or false for if an email has already been used
+const emailLookup = function(email) {
+  for (let user in users) {
+    //console.log(user);
+    if (users[user].email === email) {
+      //console.log("user found");
+      return true;
+    }
+  }
+  return false;
+}
 
-//console.log(generateRandomString());
-//shortURL = generateRandomString();
+// getUserFromCookie(req.cookies.email)
+const getUserFromCookie = (email) => {
+  let userObj;
+  for (let user in users) {
+    if (email === users[user].email) {
+      userObj = users[user];
+    } 
+  }
+  return userObj;
+}
 
+
+// our urls object
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com",
 
 };
+// our users object
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+}
+// post register
+app.post('/register', (req, res) => {
+
+  // if the email sent is an empty string
+  if (req.body.email === '') {
+    res.status(400);
+    res.redirect('https://http.cat/400');
+    return;
+  }
+
+    if (emailLookup(req.body.email)) {
+      res.status(400);
+      res.redirect('https://http.cat/400');
+      return;
+    }
+    // saves the email in cookies
+    let email = 'email';
+    let emailValue = req.body.email;
+    res.cookie(email, emailValue);
+
+    // adds our register info to our users object
+    let randomId = generateRandomString();
+    let newEmail = req.body.email;
+    let newPassword = req.body.password;
+    users[randomId] = { id: randomId, email: newEmail, password: newPassword };
+
+    console.log(users);
+  
+  res.redirect('/urls');
+});
+
 // clears our cookie (name) when pressed and redirects to our homepage
 app.post('/logout', (request, response) => {
-  let name = 'username';
-  let value = request.body.username;
-  response.clearCookie(name, value);
+  response.clearCookie('email');
   response.redirect('/urls');
 });
-// changes our homepage to include a username that typed in after hitting login button then redirect to homepage
+// changes our homepage to include a user that typed in after hitting login button then redirect to homepage
 app.post('/login', (request, response) => {
-  let name = 'username';
-  let value = request.body.username;
-  response.cookie(name, value);
+  // if the email sent is an empty string
+  if (request.body.email === '') {
+    response.status(400);
+    response.redirect('https://http.cat/400');
+    return;
+  }
+
+  if (emailLookup(request.body.email)) {
+    response.status(400);
+    response.redirect('https://http.cat/400');
+    return;
+  }
+
+  // let name = 'email';
+  // let value = request.body.email;
+  // response.cookie(name, value);
   response.redirect('/urls');
 });
 
 // edits our long url and gives it a new shorturl?
 const edit = (request, response) => {
   let longUrl = request.body.longURL; // grabs the same long URL rathar then the new one
-  console.log(longUrl);
+  //console.log(longUrl);
   const currentUrl = request.params.shortURL; // tells us our current url is the short key in the object
-  console.log(currentUrl);
+  //console.log(currentUrl);
   urlDatabase[currentUrl] = request.body.longURL; // update the object to be our key and a new url?
   response.redirect(`/urls/${currentUrl}`);
 };
@@ -57,24 +134,84 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect('http://' + longURL);
 });
 
+// new urls page
 app.get("/urls/new", (req, res) => {
+  console.log("this is my cookie", req.cookies.email);
+
+  let userObj = getUserFromCookie(req.cookies.email);
+
+  if(!userObj) {
+    return res.redirect("/urls_login");
+  }
+
   let templateVars = {
-    username: req.cookies["username"],
+    user: userObj
     // ... any other vars
   };
   res.render("urls_new", templateVars);
 });
+
 // homepage static
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase, username: req.cookies["username"] };
+  console.log("this is my cookie", req.cookies.email);
+
+  let userObj = getUserFromCookie(req.cookies.email);
+
+  if(!userObj) {
+    return res.redirect("/urls_login");
+  }
+
+  let templateVars = { 
+    urls: urlDatabase, 
+    user: userObj
+  };
+  console.log(templateVars);
+  
   res.render("urls_index", templateVars); // it will look in our views folder for urls_index, then run our variable above
   //res.send('/urls page');
 });
 
+// the short urls page
 app.get("/urls/:shortURL", (req, res) => {
+  console.log("this is my cookie", req.cookies.email);
+
+  
+  let userObj = getUserFromCookie(req.cookies.email);
+  
+  if(!userObj) {
+    return res.redirect("/urls_login");
+  }
   // req.params is all the parameters in the url "address search bar thing"
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], username: req.cookies["username"] };
+  let templateVars = { 
+    shortURL: req.params.shortURL, 
+    longURL: urlDatabase[req.params.shortURL], 
+    user: userObj 
+  };
   res.render("urls_show", templateVars);
+});
+
+// login page
+app.get("/urls_login", (req, res) => {
+ 
+  let templateVars = {
+    user: undefined,
+    email: undefined,
+  };
+
+  res.render("urls_login", templateVars);
+});
+
+// my registration page
+app.get("/register", (req, res) => {
+  console.log("this is my posted data", req.body);
+
+  let userObj = getUserFromCookie(req.cookies.email);
+
+  let templateVars = {
+    user: userObj,
+    email: req.cookies['email'],
+  };
+  res.render("registration", templateVars);
 });
 
 

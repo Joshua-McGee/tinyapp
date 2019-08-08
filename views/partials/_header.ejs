@@ -11,20 +11,23 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
     </div>
-    <!--If username has been set-->
-    <% if (username) { %>
-    <!--prints the username (which has been set to a cookie and carried as an object with the value username-->
+    <!--If user has been set-->
+    <% if (user) { %>
+    <!--prints the user (which has been set to a cookie and carried as an object with the value user-->
     <div style="padding-right:  15px; padding-top: 7px;">
-      <h5 style="color: aliceblue"> <%= username %> </h5>
+      <h5 style="color: aliceblue"> <%= user.email %> </h5>
     </div>
     <!--creates the logout button-->
     <form method="POST" action="/logout">
       <button type="submit">Logout</button>
     </form>
     <% } else { %>
-    <!-- below is my login button with post method that should redirect to login-->
-    <form method="POST" action="/login">
-      <input type="text" name="username" placeholder="username" />
+    <!-- below is my signup button with post method that should redirect to register -->
+    <form method="GET" action="/register">
+      <button type="submit">Sign Up</button>
+    </form>
+    <!-- login button -->
+    <form method="GET" action="/urls_login">
       <button type="submit">Login</button>
     </form>
     <% } %>
