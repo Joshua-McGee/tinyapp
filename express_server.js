@@ -74,10 +74,6 @@ app.post('/register', (req, res) => {
       res.redirect('https://http.cat/400');
       return;
     }
-    // saves the email in cookies
-    let email = 'email';
-    let emailValue = req.body.email;
-    res.cookie(email, emailValue);
 
     // adds our register info to our users object
     let randomId = generateRandomString();
@@ -85,6 +81,7 @@ app.post('/register', (req, res) => {
     let newPassword = req.body.password;
     users[randomId] = { id: randomId, email: newEmail, password: newPassword };
 
+    res.cookie('user_id', randomId);
     console.log(users);
   
   res.redirect('/urls');
@@ -92,7 +89,7 @@ app.post('/register', (req, res) => {
 
 // clears our cookie (name) when pressed and redirects to our homepage
 app.post('/logout', (request, response) => {
-  response.clearCookie('email');
+  response.clearCookie('user_id');
   response.redirect('/urls');
 });
 // changes our homepage to include a user that typed in after hitting login button then redirect to homepage
@@ -104,16 +101,17 @@ app.post('/login', (request, response) => {
     return;
   }
 
-  if (emailLookup(request.body.email)) {
-    response.status(400);
-    response.redirect('https://http.cat/400');
-    return;
-  }
+  console.log('this is my request body in the login', request.body);
 
-  // let name = 'email';
-  // let value = request.body.email;
-  // response.cookie(name, value);
-  response.redirect('/urls');
+  for (let user in users) {
+    if (request.body.email === users[user].email) {
+      if (request.body.password === users[user].password) {
+        response.redirect('/urls');
+      }
+    }
+  }
+  response.status(400);
+  response.redirect('https://http.cat/400');
 });
 
 // edits our long url and gives it a new shorturl?
@@ -153,13 +151,13 @@ app.get("/urls/new", (req, res) => {
 
 // homepage static
 app.get("/urls", (req, res) => {
-  console.log("this is my cookie", req.cookies.email);
+  console.log("this is my cookie", req.cookies.user_id);
 
-  let userObj = getUserFromCookie(req.cookies.email);
+  let userObj = req.cookies.user_id;
 
-  if(!userObj) {
-    return res.redirect("/urls_login");
-  }
+  // if(!userObj) {
+  //   return res.redirect("/urls_login");
+  // }
 
   let templateVars = { 
     urls: urlDatabase, 
