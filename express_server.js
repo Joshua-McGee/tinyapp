@@ -27,6 +27,19 @@ const emailLookup = function(email) {
   }
   return false;
 }
+// used to compare the cookie ID to the databases id.
+const urlsForUser = function(id) {
+  let newObj = {};
+  for (let shorturl in urlDatabase) {
+    //console.log('in the for loop', shorturl);
+    if(urlDatabase[shorturl].user_id === id){
+      newObj[shorturl] = urlDatabase[shorturl];
+      console.log('the user is equal to the id');
+      //define a new object then add
+    }
+  }
+  return newObj;
+}
 
 // our urls object
 const urlDatabase = {
@@ -108,17 +121,25 @@ app.post('/login', (request, response) => {
 
 // edits our long url and gives it a new shorturl?
 const edit = (request, response) => {
-  //console.log(longUrl);
+  let emailLogin = request.cookies.email;
+  let userObj = request.cookies.user_id;
+
+  if(userObj !== urlDatabase[request.params.shortURL].user_id) {
+    return response.redirect("/urls_login");
+  }
+  console.log('this is the request body!!!!', request.body);
+  console.log(urlDatabase[request.params.shortURL]);
   const currentUrl = request.params.shortURL; // tells us our current url is the short key in the object
-  //console.log(currentUrl);
-  urlDatabase[currentUrl] = request.body.longURL; // update the object to be our key and a new url?
+  
+  urlDatabase[currentUrl].longURL = request.body.longURL; // update the object to be our key and a new url?
   response.redirect(`/urls/${currentUrl}`);
 };
 app.post(`/urls/:shortURL`, edit);
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
-  //console.log(urlDatabase);
+  
+  const longURL = urlDatabase[req.params.shortURL].longURL;
+  
   // without the https:// it assumes your path is a local host path so you need to tell it to use http.
   res.redirect('http://' + longURL);
 });
@@ -141,23 +162,26 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", templateVars);
 });
 
-// homepage static
+// URLS homepage static
 app.get("/urls", (req, res) => {
   let userObj = req.cookies.user_id;
   let emailLogin = req.cookies.email;
 
-  if(!userObj) {
-    return res.redirect("/urls_login");
-  }
+   
 
-  let templateVars = { 
-    urls: urlDatabase, 
-    user: userObj,
-    email: emailLogin
-  };
-  console.log(urlDatabase);
+    if(!userObj) {
+      return res.redirect("/urls_login");
+    }
   
-  res.render("urls_index", templateVars); // it will look in our views folder for urls_index, then run our variable above
+    let templateVars = { 
+      urls: urlsForUser(req.cookies.user_id), 
+      user: userObj,
+      email: emailLogin
+    };
+    //console.log(urlDatabase);
+    
+    res.render("urls_index", templateVars); // it will look in our views folder for urls_index, then run our variable above
+  
 });
 
 // the short urls page
@@ -167,6 +191,9 @@ app.get("/urls/:shortURL", (req, res) => {
   let userObj = req.cookies.user_id;
   let emailLogin = req.cookies.email;
 
+  if(!userObj) {
+    return res.redirect("/urls_login");
+  }
   //console.log('this should be my current long url', urlDatabase[req.params.shortURL].longURL);
   
   // req.params is all the parameters in the url "address search bar thing"
@@ -210,13 +237,18 @@ app.get("/register", (req, res) => {
 
 // delete url
 app.post('/urls/:shortURL/delete', (request, response) => {
-  delete urlDatabase[request.params.shortURL];
+  let emailLogin = request.cookies.email;
+  let userObj = request.cookies.user_id;
+
+  if(userObj === urlDatabase[request.params.shortURL].user_id) {
+    delete urlDatabase[request.params.shortURL];
+  }
   response.redirect('/urls');
 });
 
 // homepage updates are processed here
 app.post("/urls", (req, res) => {
-  console.log('inside the adding of a new url', req.cookies.user_id)
+  //console.log('inside the adding of a new url', req.cookies.user_id)
   //console.log(req.body);  // Log the POST request body to the console
   // add to the object our short and long url
   let newShortUrl = generateRandomString();
@@ -229,4 +261,3 @@ app.post("/urls", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
-
