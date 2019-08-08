@@ -30,8 +30,8 @@ const emailLookup = function(email) {
 
 // our urls object
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+  "b2xVn2": { longURL: "http://www.lighthouselabs.ca", user_id: 'aJ48lW' },
+  "9sm5xK": { longURL: "http://www.google.com", user_id: 'aJ48lW' }
 
 };
 // our users object
@@ -108,7 +108,6 @@ app.post('/login', (request, response) => {
 
 // edits our long url and gives it a new shorturl?
 const edit = (request, response) => {
-  let longUrl = request.body.longURL; // grabs the same long URL rathar then the new one
   //console.log(longUrl);
   const currentUrl = request.params.shortURL; // tells us our current url is the short key in the object
   //console.log(currentUrl);
@@ -144,7 +143,6 @@ app.get("/urls/new", (req, res) => {
 
 // homepage static
 app.get("/urls", (req, res) => {
-  console.log("this is my cookie !!!!!!!", req.cookies.user_id); // no cookie id on login after logout has been passed
   let userObj = req.cookies.user_id;
   let emailLogin = req.cookies.email;
 
@@ -157,7 +155,7 @@ app.get("/urls", (req, res) => {
     user: userObj,
     email: emailLogin
   };
-  console.log(templateVars);
+  console.log(urlDatabase);
   
   res.render("urls_index", templateVars); // it will look in our views folder for urls_index, then run our variable above
 });
@@ -181,7 +179,6 @@ app.get("/urls/:shortURL", (req, res) => {
 
 // login page
 app.get("/urls_login", (req, res) => {
-  console.log("this is my cookie", req.cookies.user_id);
 
   let userObj = req.cookies.user_id;
   let emailLogin = req.cookies.email;
@@ -196,7 +193,6 @@ app.get("/urls_login", (req, res) => {
 
 // my registration page
 app.get("/register", (req, res) => {
-  console.log("this is my cookie", req.cookies.user_id);
 
   let userObj = req.cookies.user_id;
   let emailLogin = req.cookies.email;
@@ -217,11 +213,12 @@ app.post('/urls/:shortURL/delete', (request, response) => {
 
 // homepage updates are processed here
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
+  console.log('inside the adding of a new url', req.cookies.user_id)
+  //console.log(req.body);  // Log the POST request body to the console
   // add to the object our short and long url
   let newShortUrl = generateRandomString();
   let longUrl = req.body.longURL;
-  urlDatabase[newShortUrl] = longUrl; // key + value saves to our url database
+  urlDatabase[newShortUrl] = {longURL: longUrl, user_id: req.cookies.user_id}; // key + value saves to our url database
   res.redirect(`/urls/${newShortUrl}`);
 });
 
