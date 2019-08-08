@@ -2,6 +2,10 @@ const express = require("express");
 const cookieParser = require('cookie-parser');
 const app = express();
 const PORT = 8080; // default port 8080
+const bcrypt = require('bcrypt');
+// const password = req.params.password; // found in the req.params object
+// const hashedPassword = bcrypt.hashSync(password, 10);
+// console.log(req.params.password);
 
 app.set("view engine", "ejs");
 
@@ -79,8 +83,10 @@ app.post('/register', (req, res) => {
     // adds our register info to our users object
     let randomId = generateRandomString();
     let newEmail = req.body.email;
-    let newPassword = req.body.password;
-    users[randomId] = { id: randomId, email: newEmail, password: newPassword };
+    const password = req.body.password; // found in req body (aka body is what i enter into txt button)
+    console.log('this is my pasword:', password);
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    users[randomId] = { id: randomId, email: newEmail, password: hashedPassword };
 
     res.cookie('user_id', randomId);
     res.cookie('email', newEmail);
@@ -108,7 +114,7 @@ app.post('/login', (request, response) => {
 
   for (let user in users) {
     if (request.body.email === users[user].email) {
-      if (request.body.password === users[user].password) {
+      if (bcrypt.compareSync(request.body.password, users[user].password)) {
         response.cookie('user_id', users[user].id)
         response.cookie('email', users[user].email)
         return response.redirect('/urls');
@@ -166,8 +172,6 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls", (req, res) => {
   let userObj = req.cookies.user_id;
   let emailLogin = req.cookies.email;
-
-   
 
     if(!userObj) {
       return res.redirect("/urls_login");
