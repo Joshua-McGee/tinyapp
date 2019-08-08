@@ -28,18 +28,6 @@ const emailLookup = function(email) {
   return false;
 }
 
-// getUserFromCookie(req.cookies.email)
-const getUserFromCookie = (email) => {
-  let userObj;
-  for (let user in users) {
-    if (email === users[user].email) {
-      userObj = users[user];
-    } 
-  }
-  return userObj;
-}
-
-
 // our urls object
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -82,6 +70,7 @@ app.post('/register', (req, res) => {
     users[randomId] = { id: randomId, email: newEmail, password: newPassword };
 
     res.cookie('user_id', randomId);
+    res.cookie('email', newEmail);
     console.log(users);
   
   res.redirect('/urls');
@@ -106,7 +95,9 @@ app.post('/login', (request, response) => {
   for (let user in users) {
     if (request.body.email === users[user].email) {
       if (request.body.password === users[user].password) {
-        response.redirect('/urls');
+        response.cookie('user_id', users[user].id)
+        response.cookie('email', users[user].email)
+        return response.redirect('/urls');
       }
     }
   }
@@ -134,13 +125,9 @@ app.get("/u/:shortURL", (req, res) => {
 
 // new urls page
 app.get("/urls/new", (req, res) => {
-  console.log("this is my cookie", req.cookies.email);
+  //console.log("this is my cookie", req.cookies.user_id);
 
-  let userObj = getUserFromCookie(req.cookies.email);
-
-  if(!userObj) {
-    return res.redirect("/urls_login");
-  }
+  let userObj = req.cookies.user_id;
 
   let templateVars = {
     user: userObj
@@ -151,34 +138,30 @@ app.get("/urls/new", (req, res) => {
 
 // homepage static
 app.get("/urls", (req, res) => {
-  console.log("this is my cookie", req.cookies.user_id);
-
+  console.log("this is my cookie !!!!!!!", req.cookies.user_id); // no cookie id on login after logout has been passed
   let userObj = req.cookies.user_id;
+  let emailLogin = req.cookies.email;
 
-  // if(!userObj) {
-  //   return res.redirect("/urls_login");
-  // }
+  if(!userObj) {
+    return res.redirect("/register");
+  }
 
   let templateVars = { 
     urls: urlDatabase, 
-    user: userObj
+    user: userObj,
+    email: emailLogin
   };
   console.log(templateVars);
   
   res.render("urls_index", templateVars); // it will look in our views folder for urls_index, then run our variable above
-  //res.send('/urls page');
 });
 
 // the short urls page
 app.get("/urls/:shortURL", (req, res) => {
-  console.log("this is my cookie", req.cookies.email);
+  //console.log("this is my cookie", req.cookies.user_id);
 
+  let userObj = req.cookies.user_id;
   
-  let userObj = getUserFromCookie(req.cookies.email);
-  
-  if(!userObj) {
-    return res.redirect("/urls_login");
-  }
   // req.params is all the parameters in the url "address search bar thing"
   let templateVars = { 
     shortURL: req.params.shortURL, 
@@ -190,9 +173,11 @@ app.get("/urls/:shortURL", (req, res) => {
 
 // login page
 app.get("/urls_login", (req, res) => {
- 
+  console.log("this is my cookie", req.cookies.user_id);
+
+  let userObj = req.cookies.user_id;
   let templateVars = {
-    user: undefined,
+    user: userObj,
     email: undefined,
   };
 
@@ -201,9 +186,9 @@ app.get("/urls_login", (req, res) => {
 
 // my registration page
 app.get("/register", (req, res) => {
-  console.log("this is my posted data", req.body);
+  console.log("this is my cookie", req.cookies.user_id);
 
-  let userObj = getUserFromCookie(req.cookies.email);
+  let userObj = req.cookies.user_id;
 
   let templateVars = {
     user: userObj,
