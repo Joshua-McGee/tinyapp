@@ -135,8 +135,8 @@ app.get("/urls/new", (req, res) => {
 
   let templateVars = {
     user: userObj,
-    email: emailLogin
-    // ... any other vars
+    email: emailLogin,
+    urls: urlDatabase
   };
   res.render("urls_new", templateVars);
 });
@@ -166,13 +166,16 @@ app.get("/urls/:shortURL", (req, res) => {
 
   let userObj = req.cookies.user_id;
   let emailLogin = req.cookies.email;
+
+  //console.log('this should be my current long url', urlDatabase[req.params.shortURL].longURL);
   
   // req.params is all the parameters in the url "address search bar thing"
   let templateVars = { 
     shortURL: req.params.shortURL, 
-    longURL: urlDatabase[req.params.shortURL], 
+    longURL: urlDatabase[req.params.shortURL].longURL, 
     user: userObj,
-    email: emailLogin
+    email: emailLogin,
+    urls: urlDatabase
   };
   res.render("urls_show", templateVars);
 });
