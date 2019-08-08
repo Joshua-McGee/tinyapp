@@ -79,6 +79,7 @@ app.post('/register', (req, res) => {
 // clears our cookie (name) when pressed and redirects to our homepage
 app.post('/logout', (request, response) => {
   response.clearCookie('user_id');
+  response.clearCookie('email');
   response.redirect('/urls');
 });
 // changes our homepage to include a user that typed in after hitting login button then redirect to homepage
@@ -129,6 +130,10 @@ app.get("/urls/new", (req, res) => {
   let emailLogin = req.cookies.email;
   let userObj = req.cookies.user_id;
 
+  if(!userObj) {
+    return res.redirect("/urls_login");
+  }
+
   let templateVars = {
     user: userObj,
     email: emailLogin
@@ -144,7 +149,7 @@ app.get("/urls", (req, res) => {
   let emailLogin = req.cookies.email;
 
   if(!userObj) {
-    return res.redirect("/register");
+    return res.redirect("/urls_login");
   }
 
   let templateVars = { 
