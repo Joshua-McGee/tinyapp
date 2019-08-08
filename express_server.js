@@ -101,8 +101,8 @@ app.post('/login', (request, response) => {
       }
     }
   }
-  response.status(400);
-  response.redirect('https://http.cat/400');
+  response.status(403);
+  response.redirect('https://http.cat/403');
 });
 
 // edits our long url and gives it a new shorturl?
@@ -126,11 +126,12 @@ app.get("/u/:shortURL", (req, res) => {
 // new urls page
 app.get("/urls/new", (req, res) => {
   //console.log("this is my cookie", req.cookies.user_id);
-
+  let emailLogin = req.cookies.email;
   let userObj = req.cookies.user_id;
 
   let templateVars = {
-    user: userObj
+    user: userObj,
+    email: emailLogin
     // ... any other vars
   };
   res.render("urls_new", templateVars);
@@ -161,12 +162,14 @@ app.get("/urls/:shortURL", (req, res) => {
   //console.log("this is my cookie", req.cookies.user_id);
 
   let userObj = req.cookies.user_id;
+  let emailLogin = req.cookies.email;
   
   // req.params is all the parameters in the url "address search bar thing"
   let templateVars = { 
     shortURL: req.params.shortURL, 
     longURL: urlDatabase[req.params.shortURL], 
-    user: userObj 
+    user: userObj,
+    email: emailLogin
   };
   res.render("urls_show", templateVars);
 });
@@ -176,9 +179,11 @@ app.get("/urls_login", (req, res) => {
   console.log("this is my cookie", req.cookies.user_id);
 
   let userObj = req.cookies.user_id;
+  let emailLogin = req.cookies.email;
+
   let templateVars = {
     user: userObj,
-    email: undefined,
+    email: emailLogin
   };
 
   res.render("urls_login", templateVars);
@@ -189,10 +194,11 @@ app.get("/register", (req, res) => {
   console.log("this is my cookie", req.cookies.user_id);
 
   let userObj = req.cookies.user_id;
+  let emailLogin = req.cookies.email;
 
   let templateVars = {
     user: userObj,
-    email: req.cookies['email'],
+    email: emailLogin
   };
   res.render("registration", templateVars);
 });
