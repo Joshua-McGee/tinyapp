@@ -1,17 +1,21 @@
 const express = require("express");
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
+const bodyParser = require("body-parser");
 const app = express();
 const PORT = 8080; // default port 8080
 const bcrypt = require('bcrypt');
-// const password = req.params.password; // found in the req.params object
-// const hashedPassword = bcrypt.hashSync(password, 10);
-// console.log(req.params.password);
 
 app.set("view engine", "ejs");
 
-const bodyParser = require("body-parser");
+
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1', 'key2', 'key3', 'key4'],
+
+  // Cookie Options
+  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+}))
 
 
 const chars = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz"]; // every character the url can have
@@ -19,7 +23,7 @@ const chars = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxy
 const generateRandomString = () => {
   return [...Array(6)].map(i=>chars[Math.random()*chars.length|0]).join``; // returns 6 character array based on the varable chars.
 };
-// not supposed to use this
+
 // function that returns true or false for if an email has already been used
 const emailLookup = function(email) {
   for (let user in users) {
@@ -31,7 +35,8 @@ const emailLookup = function(email) {
   }
   return false;
 }
-// used to compare the cookie ID to the databases id.
+
+// used to compare the cookie ID to the databases id then updates and returns a new obj
 const urlsForUser = function(id) {
   let newObj = {};
   for (let shorturl in urlDatabase) {
@@ -45,13 +50,13 @@ const urlsForUser = function(id) {
   return newObj;
 }
 
-// our urls object
+// our urls database
 const urlDatabase = {
   "b2xVn2": { longURL: "http://www.lighthouselabs.ca", user_id: 'aJ48lW' },
   "9sm5xK": { longURL: "http://www.google.com", user_id: 'aJ48lW' }
 
 };
-// our users object
+// our users database
 const users = { 
   "userRandomID": {
     id: "userRandomID", 
@@ -84,23 +89,26 @@ app.post('/register', (req, res) => {
     let randomId = generateRandomString();
     let newEmail = req.body.email;
     const password = req.body.password; // found in req body (aka body is what i enter into txt button)
-    console.log('this is my pasword:', password);
+    //console.log('this is my pasword:', password);
     const hashedPassword = bcrypt.hashSync(password, 10);
     users[randomId] = { id: randomId, email: newEmail, password: hashedPassword };
+    //console.log(users[randomId]);
 
-    res.cookie('user_id', randomId);
-    res.cookie('email', newEmail);
-    console.log(users);
+    // set my cookies
+    req.session.user_id = randomId;
+    req.session.email = newEmail
   
   res.redirect('/urls');
 });
 
 // clears our cookie (name) when pressed and redirects to our homepage
 app.post('/logout', (request, response) => {
-  response.clearCookie('user_id');
-  response.clearCookie('email');
+  
+  request.session = null;
+  //request.session.sig = null;
   response.redirect('/urls');
 });
+
 // changes our homepage to include a user that typed in after hitting login button then redirect to homepage
 app.post('/login', (request, response) => {
   // if the email sent is an empty string
@@ -115,8 +123,8 @@ app.post('/login', (request, response) => {
   for (let user in users) {
     if (request.body.email === users[user].email) {
       if (bcrypt.compareSync(request.body.password, users[user].password)) {
-        response.cookie('user_id', users[user].id)
-        response.cookie('email', users[user].email)
+        request.session.user_id = users[user].id;
+        request.session.email = users[user].email;
         return response.redirect('/urls');
       }
     }
@@ -127,8 +135,8 @@ app.post('/login', (request, response) => {
 
 // edits our long url and gives it a new shorturl?
 const edit = (request, response) => {
-  let emailLogin = request.cookies.email;
-  let userObj = request.cookies.user_id;
+  //let emailLogin = request.session.email;
+  let userObj = request.session.user_id;
 
   if(userObj !== urlDatabase[request.params.shortURL].user_id) {
     return response.redirect("/urls_login");
@@ -153,8 +161,8 @@ app.get("/u/:shortURL", (req, res) => {
 // new urls page
 app.get("/urls/new", (req, res) => {
   //console.log("this is my cookie", req.cookies.user_id);
-  let emailLogin = req.cookies.email;
-  let userObj = req.cookies.user_id;
+  let emailLogin = req.session.email;
+  let userObj = req.session.user_id;
 
   if(!userObj) {
     return res.redirect("/urls_login");
@@ -170,15 +178,15 @@ app.get("/urls/new", (req, res) => {
 
 // URLS homepage static
 app.get("/urls", (req, res) => {
-  let userObj = req.cookies.user_id;
-  let emailLogin = req.cookies.email;
+  let userObj = req.session.user_id;
+  let emailLogin = req.session.email;
 
     if(!userObj) {
       return res.redirect("/urls_login");
     }
   
     let templateVars = { 
-      urls: urlsForUser(req.cookies.user_id), 
+      urls: urlsForUser(req.session.user_id), 
       user: userObj,
       email: emailLogin
     };
@@ -192,8 +200,8 @@ app.get("/urls", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   //console.log("this is my cookie", req.cookies.user_id);
 
-  let userObj = req.cookies.user_id;
-  let emailLogin = req.cookies.email;
+  let userObj = req.session.user_id;
+  let emailLogin = req.session.email;
 
   if(!userObj) {
     return res.redirect("/urls_login");
@@ -214,8 +222,8 @@ app.get("/urls/:shortURL", (req, res) => {
 // login page
 app.get("/urls_login", (req, res) => {
 
-  let userObj = req.cookies.user_id;
-  let emailLogin = req.cookies.email;
+  let userObj = req.session.user_id;
+  let emailLogin = req.session.email;
 
   let templateVars = {
     user: userObj,
@@ -228,8 +236,8 @@ app.get("/urls_login", (req, res) => {
 // my registration page
 app.get("/register", (req, res) => {
 
-  let userObj = req.cookies.user_id;
-  let emailLogin = req.cookies.email;
+  let userObj = req.session.user_id;
+  let emailLogin = req.session.email;
 
   let templateVars = {
     user: userObj,
@@ -241,8 +249,8 @@ app.get("/register", (req, res) => {
 
 // delete url
 app.post('/urls/:shortURL/delete', (request, response) => {
-  let emailLogin = request.cookies.email;
-  let userObj = request.cookies.user_id;
+  //let emailLogin = request.session.email;
+  let userObj = request.session.user_id;
 
   if(userObj === urlDatabase[request.params.shortURL].user_id) {
     delete urlDatabase[request.params.shortURL];
@@ -257,7 +265,7 @@ app.post("/urls", (req, res) => {
   // add to the object our short and long url
   let newShortUrl = generateRandomString();
   let longUrl = req.body.longURL;
-  urlDatabase[newShortUrl] = {longURL: longUrl, user_id: req.cookies.user_id}; // key + value saves to our url database
+  urlDatabase[newShortUrl] = {longURL: longUrl, user_id: req.session.user_id}; // key + value saves to our url database
   res.redirect(`/urls/${newShortUrl}`);
 });
 
