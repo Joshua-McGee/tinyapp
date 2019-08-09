@@ -52,7 +52,7 @@ const users = {
     password: "dishwasher-funk"
   }
 }
-////////////////////////////////////////////POST && GETS/////////////////////////////////////////////////////////////
+///////////////////////////////////////////////POST && GETS/////////////////////////////////////////////////////////////
 
 // post register
 app.post('/register', (req, res) => {
@@ -60,14 +60,14 @@ app.post('/register', (req, res) => {
   // if the email sent is an empty string
   if (req.body.email === '') {
     res.status(400);
-    res.redirect('https://http.cat/400');
+    res.send('400 error, you cant enter nothing...');
     return;
   }
 
   // checks to see if the email is already in the database
   if (emailLookup(users, req.body.email)) {
     res.status(400);
-    res.redirect('https://http.cat/400');
+    res.send('400 error, this email already exists use another one');
     return;
   }
 
@@ -100,11 +100,9 @@ app.post('/login', (request, response) => {
   // if the email sent is an empty string
   if (request.body.email === '') {
     response.status(400);
-    response.redirect('https://http.cat/400');
+    response.send('400 error, the email is empty');
     return;
   }
-
-  console.log('this is my request body in the login', request.body);
 
   for (let user in users) {
     if (request.body.email === users[user].email) {
@@ -116,7 +114,7 @@ app.post('/login', (request, response) => {
     }
   }
   response.status(403);
-  response.redirect('https://http.cat/403');
+  response.send('403, login failed try again');
 });
 
 // edits our long url and gives it a new shorturl?
@@ -136,9 +134,14 @@ const edit = (request, response) => {
 // experiment above I made a function thats named and passed it to my post
 app.post(`/urls/:shortURL`, edit);
 
+// when the short url gets entered you will redirect to the longurl
 app.get("/u/:shortURL", (req, res) => {
 
-  const longURL = urlDatabase[req.params.shortURL].longURL;
+  if (urlDatabase[req.params.shortURL] === undefined){
+    return res.send('500 error, this small url doesnt exist');
+  }
+
+  let longURL = urlDatabase[req.params.shortURL].longURL;
 
   // without the https:// it assumes your path is a local host path so you need to tell it to use http.
   // makes it so when you create links you dont have to include http:// (more user friendly)
@@ -186,6 +189,10 @@ app.get("/urls/:shortURL", (req, res) => {
   let emailLogin = req.session.email;
 
   checkIfLogin(userObj, res);
+
+  if (urlDatabase[req.params.shortURL] === undefined){
+     return res.send('500 error, this shorturl does not exist')
+  }
 
   // req.params is all the parameters in the url "address search bar thing"
   let templateVars = {
