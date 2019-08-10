@@ -28,3 +28,4 @@ TinyApp is a full stack web application built with Node and Express that allows 
 - Run the development web server using the `node express_server.js` command.
 - It will run on PORT 8080 so make sure this is clear or feel free to change the PORT.
 - Open browser and type http://localhost:8080/register to make an account and enjoy the app (once the server is running).
+- The homepage is /urls however you will be redirected to the login page if you are not logged in and trying to use other pages.
