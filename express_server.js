@@ -145,7 +145,8 @@ app.get("/u/:shortURL", (req, res) => {
 
   // without the https:// it assumes your path is a local host path so you need to tell it to use http.
   // makes it so when you create links you dont have to include http:// (more user friendly)
-  res.redirect('http://' + longURL);
+  // turns out this was against project spec but if implementing just add 'http://' + longURL
+  res.redirect(longURL);
 });
 
 // new urls page
