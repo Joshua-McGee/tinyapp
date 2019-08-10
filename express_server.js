@@ -24,7 +24,6 @@ const urlsForUser = function (id) {
   for (let shorturl in urlDatabase) {
     if (urlDatabase[shorturl].user_id === id) {
       newObj[shorturl] = urlDatabase[shorturl];
-      console.log('the user is equal to the id');
       //define a new object then add
     }
   }
@@ -78,7 +77,6 @@ app.post('/register', (req, res) => {
   //console.log('this is my pasword:', password);
   const hashedPassword = bcrypt.hashSync(password, 10);
   users[randomId] = { id: randomId, email: newEmail, password: hashedPassword };
-  console.log(users[randomId]);
 
   // set my cookies
   req.session.user_id = randomId;
